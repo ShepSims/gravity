@@ -53,6 +53,9 @@ void draw()
   ellipse(100, MIDPOINT_Y, 16, 16); // inner eye
   fill(color(150,200,255));
   ellipse(100, MIDPOINT_Y, 10, 10); // eyeball
+  fill(color(255));
+  noStroke();
+  ellipse(102, MIDPOINT_Y-2, 2, 1);
   drawArms();
 }
 
