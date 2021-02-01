@@ -1,5 +1,5 @@
-WIDTH = 500
-HEIGHT = 500
+WIDTH = 2000
+HEIGHT = 2000
 
 class ParticleSystem(object):
     
