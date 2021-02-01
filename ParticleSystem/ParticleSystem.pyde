@@ -6,7 +6,7 @@ class ParticleSystem(object):
     def __init__(self, x, y, count = 10):
         self.position = PVector(x,y)
         self.particles = []
-        self.gravity = random(.1)
+        self.gravity = .01
         for i in range(count):
             self.addParticle()
         
@@ -23,6 +23,15 @@ class ParticleSystem(object):
         
     def popParticle(self):
         self.particles.pop()
+        
+    def increaseGravity(self):
+        self.gravity += .0001
+        
+    def decreaseGravity(self):
+        self.gravity -= .0001
+        if self.gravity <= 0:
+            self.gravity = .00001
+        
                     
             
 
@@ -34,6 +43,7 @@ class Particle(object):
         self.angle = radians(random(0,360))
         self.velocity = PVector(random(0,5),random(0,5))
         self.position = PVector( system.position.x + self.distance*cos(self.angle),  system.position.y + self.distance*sin(self.angle))
+        self.tracer = False
 
     def display(self):
         stroke(0)
@@ -70,25 +80,28 @@ class Particle(object):
         
         self.getDistance()
         # Add xy-components of gravity vector to velocity
-        self.velocity.x += cos(self.angle)*self.system.gravity*self.distance
-        self.velocity.y += sin(self.angle)*self.system.gravity*self.distance
+        self.velocity.x += cos(self.angle)*self.system.gravity*self.distance**2
+        self.velocity.y += sin(self.angle)*self.system.gravity*self.distance**2
         
+        # Bounce off of the cursor if particle gets close 
         if self.distance < 10:self.bounce()
         
     def bounce(self):
         self.velocity.x = -self.velocity.x
         self.velocity.y = -self.velocity.y
+    
+    def trace(self):
+        point(self.position.x, self.position.y)
         
 systems = []
 systems.append(ParticleSystem(0,0, 1))
 
 def setup():
     size(500,500)
+    background(color(255))
             
 
 def draw():
-    background(color(255))
-
     try: 
         current = systems[len(systems)-1]
         if keyPressed:
@@ -96,6 +109,12 @@ def draw():
                 current.addParticle()
             if keyCode == DOWN:
                 current.popParticle()
+            if keyCode == LEFT:
+                current.decreaseGravity()
+            if keyCode == RIGHT:
+                current.increaseGravity()
+            if key == "c":
+                background(color(255))
     except:
         pass
     for system in systems:
