@@ -1,12 +1,12 @@
 WIDTH = 2000
-HEIGHT = 2000
+HEIGHT = 1000
 
 class ParticleSystem(object):
     
-    def __init__(self, x, y, count = 10):
+    def __init__(self, x, y, count = 5):
         self.position = PVector(x,y)
         self.particles = []
-        self.gravity = .01
+        self.gravity = .0001
         for i in range(count):
             self.addParticle()
         
@@ -41,7 +41,7 @@ class Particle(object):
         self.system = system
         self.distance = random(100)
         self.angle = radians(random(0,360))
-        self.velocity = PVector(random(0,5),random(0,5))
+        self.velocity = PVector(random(0,.1),random(0,.1))
         self.position = PVector( system.position.x + self.distance*cos(self.angle),  system.position.y + self.distance*sin(self.angle))
         self.tracer = False
 
@@ -94,11 +94,11 @@ class Particle(object):
         point(self.position.x, self.position.y)
         
 systems = []
-systems.append(ParticleSystem(0,0, 1))
 
 def setup():
-    size(500,500)
+    size(WIDTH,HEIGHT)
     background(color(255))
+    systems.append(ParticleSystem(mouseX,mouseY))
             
 
 def draw():
@@ -117,7 +117,6 @@ def draw():
                 background(color(255))
     except:
         pass
-    for system in systems:
-        system.render(mouseX, mouseY)
+    systems[0].render(mouseX, mouseY)
         
     
