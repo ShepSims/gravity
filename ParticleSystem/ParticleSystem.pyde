@@ -6,11 +6,17 @@ class ParticleSystem(object):
     def __init__(self, x, y, count = 5):
         self.position = PVector(x,y)
         self.particles = []
-        self.gravity = .0001
+        self.dots = []
+        self.dashes = []
+        self.gravity = 5
+        self.gType = True
+        self.drawType = "dot"
+        self.trace = False
         for i in range(count):
             self.addParticle()
+            
         
-    def render(self, x, y):
+    def move(self, x, y):
         self.position.x = x
         self.position.y = y
         
@@ -22,16 +28,18 @@ class ParticleSystem(object):
         self.particles.append(Particle(self))
         
     def popParticle(self):
-        self.particles.pop()
+        try: self.particles.pop()
+        except: print("already empty")
         
     def increaseGravity(self):
-        self.gravity += .0001
+        self.gravity += 1
         
     def decreaseGravity(self):
-        self.gravity -= .0001
+        self.gravity -= 1
         if self.gravity <= 0:
-            self.gravity = .00001
-        
+            self.gravity = 1
+            
+            
                     
             
 
@@ -43,14 +51,18 @@ class Particle(object):
         self.angle = radians(random(0,360))
         self.velocity = PVector(random(0,.1),random(0,.1))
         self.position = PVector( system.position.x + self.distance*cos(self.angle),  system.position.y + self.distance*sin(self.angle))
-        self.tracer = False
+        self.lastfew = []
 
     def display(self):
         stroke(0)
         fill(color(0))
-        ellipse(self.position.x, self.position.y, 5, 5)
-            
-        
+        if self.system.drawType=="dot": ellipse(self.position.x, self.position.y, 2, 2)
+        if self.system.drawType=="line":
+            line(self.previousPosition.x, self.previousPosition.y, self.position.x, self.position.y)
+        if self.system.drawType=="lastfew": 
+            background(color(255))
+            for prevpos in self.lastfew:
+                ellipse(prevpos.x, prevpos.y, 2, 2)
     def move(self):
         
         self.updateVelocity()
@@ -73,16 +85,25 @@ class Particle(object):
         self.angle = atan2(self.d.y, self.d.x)
         
     def updatePosition(self):
+        
+        self.previousPosition = PVector(self.position.x, self.position.x)
         self.position.x += self.velocity.x
         self.position.y += self.velocity.y
+        
+        self.lastfew.append(self.position)
+        if len(self.lastfew)>14:
+            self.lastfew.pop(0)
     
     def updateVelocity(self):
         
         self.getDistance()
         # Add xy-components of gravity vector to velocity
-        self.velocity.x += cos(self.angle)*self.system.gravity*self.distance**2
-        self.velocity.y += sin(self.angle)*self.system.gravity*self.distance**2
-        
+        if self.system.gType:
+            self.velocity.x += cos(self.angle)*self.system.gravity/self.distance**2
+            self.velocity.y += sin(self.angle)*self.system.gravity/self.distance**2
+        else:
+            self.velocity.x += cos(self.angle)*self.system.gravity*self.distance**2/10000
+            self.velocity.y += sin(self.angle)*self.system.gravity*self.distance**2/10000
         # Bounce off of the cursor if particle gets close 
         if self.distance < 10:self.bounce()
         
@@ -96,27 +117,33 @@ class Particle(object):
 systems = []
 
 def setup():
+    strokeWeight(1)
     size(WIDTH,HEIGHT)
     background(color(255))
     systems.append(ParticleSystem(mouseX,mouseY))
             
 
 def draw():
-    try: 
-        current = systems[len(systems)-1]
-        if keyPressed:
-            if keyCode == UP:
-                current.addParticle()
-            if keyCode == DOWN:
-                current.popParticle()
-            if keyCode == LEFT:
-                current.decreaseGravity()
-            if keyCode == RIGHT:
-                current.increaseGravity()
-            if key == "c":
-                background(color(255))
-    except:
-        pass
-    systems[0].render(mouseX, mouseY)
-        
+    systems[0].move(mouseX, mouseY)
     
+def keyPressed():
+    if keyCode == UP:
+        systems[0].addParticle()
+    if keyCode == DOWN:
+        systems[0].popParticle()
+    if keyCode == LEFT:
+        systems[0].decreaseGravity()
+    if keyCode == RIGHT:
+        systems[0].increaseGravity()
+    if key == "c":
+        background(color(255))
+    if key == "d":
+        systems[0].drawType = "dot"
+    if key == "l":
+        systems[0].drawType = "line"
+    if key == "t":
+        systems[0].trace = not systems[0].trace
+    if key == "g":
+        systems[0].gType = not systems[0].gType
+    if key == "f":
+        systems[0].drawType = "lastfew"
