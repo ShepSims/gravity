@@ -1,44 +1,61 @@
+import os 
+
 WIDTH = 2000
 HEIGHT = 1000
 
+class Mouse(object):
+    
+    def __init__(self, x, y):
+        self.position = PVector(x,y)
+        self.on = False
+
 class ParticleSystem(object):
     
+    # Creates a new particle system wherever the mouse when clicking 
     def __init__(self, x, y, count = 5):
         self.position = PVector(x,y)
+        self.velocity = PVector(0,0)
         self.particles = []
-        self.dots = []
-        self.dashes = []
-        self.gravity = 5
+        self.growthRate = .001
+        self.gravity=0
+        self.mass=500
         self.gType = True
         self.drawType = "dot"
         self.trace = False
         for i in range(count):
             self.addParticle()
             
-        
+    # Calculate centroid + mass while moving and displaying all particles in system
     def move(self, x, y):
-        self.position.x = x
-        self.position.y = y
-        
-        for particle in self.particles:
-            particle.move()
-            particle.display()
+        self.mass=500
+        if len(self.particles)!= 0:
+            centroid_x = 0
+            centroid_y = 0
             
+            self.position.x = x
+            self.position.y = y
+            for particle in self.particles:
+                particle.move()
+                particle.display()
+                centroid_x+=particle.position.x
+                centroid_y=particle.position.y
+                self.mass+=particle.mass
+            self.gravity=self.mass/len(self.particles)
+            
+            centroid_x = centroid_x/len(self.particles)
+            centroid_y = centroid_y/len(self.particles)
+            
+            
+    # Add particle to system
     def addParticle(self):
         self.particles.append(Particle(self))
         
+    # Pop oldest particle 
     def popParticle(self):
-        try: self.particles.pop()
+        try: 
+            first = self.particles[0]
+            self.particles = self.particles[1:]
         except: print("already empty")
-        
-    def increaseGravity(self):
-        self.gravity += 1
-        
-    def decreaseGravity(self):
-        self.gravity -= 1
-        if self.gravity <= 0:
-            self.gravity = 1
-            
             
                     
             
@@ -46,6 +63,7 @@ class ParticleSystem(object):
 class Particle(object):
     
     def __init__(self, system):
+        self.mass = 0
         self.system = system
         self.distance = random(100)
         self.angle = radians(random(0,360))
@@ -56,17 +74,19 @@ class Particle(object):
     def display(self):
         stroke(0)
         fill(color(0))
-        if self.system.drawType=="dot": ellipse(self.position.x, self.position.y, 2, 2)
+        if self.system.drawType=="dot": ellipse(self.position.x, self.position.y, self.mass, self.mass)
         if self.system.drawType=="line":
             line(self.previousPosition.x, self.previousPosition.y, self.position.x, self.position.y)
         if self.system.drawType=="lastfew": 
-            background(color(255))
             for prevpos in self.lastfew:
                 ellipse(prevpos.x, prevpos.y, 2, 2)
+                
+                
     def move(self):
         
         self.updateVelocity()
         self.updatePosition()
+        self.mass += self.system.growthRate
             
             
     def getDistance(self):
@@ -105,7 +125,7 @@ class Particle(object):
             self.velocity.x += cos(self.angle)*self.system.gravity*self.distance**2/10000
             self.velocity.y += sin(self.angle)*self.system.gravity*self.distance**2/10000
         # Bounce off of the cursor if particle gets close 
-        if self.distance < 10:self.bounce()
+        #if self.distance < 10:self.bounce()
         
     def bounce(self):
         self.velocity.x = -self.velocity.x
@@ -124,26 +144,66 @@ def setup():
             
 
 def draw():
-    systems[0].move(mouseX, mouseY)
+    mouse = Mouse(mouseX, mouseY)
+    print("hello")
+    if mousePressed:
+        mouse.on = True
+    else:
+        mouse.on = False
+    # mouse takes control over top system
+    for system in systems:
+        system.move(mouse.position.x, mouse.position.y)
+        
     
 def keyPressed():
     if keyCode == UP:
         systems[0].addParticle()
     if keyCode == DOWN:
         systems[0].popParticle()
+        
+    # If left/right & g increase/decrease gravity
+    # If left/right w/o gincrease/decrease particleGrowthRate
     if keyCode == LEFT:
-        systems[0].decreaseGravity()
+        systems[0].growthRate-=.001
     if keyCode == RIGHT:
-        systems[0].increaseGravity()
+        systems[0].growthRate+=.001
+     
+        
     if key == "c":
         background(color(255))
+        
+        
     if key == "d":
         systems[0].drawType = "dot"
+        
+        
     if key == "l":
         systems[0].drawType = "line"
+        
+        
     if key == "t":
         systems[0].trace = not systems[0].trace
+        
+        
     if key == "g":
         systems[0].gType = not systems[0].gType
+        
+        
     if key == "f":
         systems[0].drawType = "lastfew"
+        
+    # Press s to save window as shep#.tiff
+    if key == "s":
+        count=0
+        filename=this.dataPath("") + "/shep"+ str(count)+".tiff"
+        f = this.dataFile(filename)
+        print f
+        print f.exists()
+        while this.dataFile(filename).isFile():
+                count+=1
+                filename=this.dataPath("") +"/shep"+ str(count)+".tiff"
+            
+        save(filename)
+        
+#def mouseClicked():
+ #   systems.append(ParticleSystem(mouseX,mouseY))
