@@ -1,4 +1,4 @@
-# Drawing with Particle Systems in Prosessing.py 
+# Drawing with Particle Systems in Processing.py 
 ![Example](Example.png)<br/>
 The image above was made using this repository!<br/><br/>
 ***Install***<br/><br/>
@@ -12,8 +12,18 @@ Select Run and have some fun!<br/><br/>
 ***Controls***<br/><br/>
 Up - Adds more particles to the system<br/>
 Down - Removes most recently added particles<br/>
-Left - Decreases gravitational constant<br/>
-Right - Increases gravitational constant<br/>
-c - clears the screen
+Left - Decreases particle growth rate<br/>
+Right - Increases particle growth rate<br/>
+
+g - invert gravity<br/>
+
+f - tracer mode<br/>
+l - line mode<br/>
+d - dot mode<br/>
+
+
+s - takes a screenshot<br/>
+
+c - clears the screen<br/>
 
 
