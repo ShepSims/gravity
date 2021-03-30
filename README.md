@@ -22,7 +22,7 @@ l - line mode<br/>
 d - dot mode<br/>
 
 
-s - takes a screenshot<br/>
+s - takes a screenshot and saves as .tiff in ../ParticleSystem/data<br/>
 
 c - clears the screen<br/>
 
