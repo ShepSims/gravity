@@ -1,6 +1,6 @@
 import os 
 
-WIDTH = 2000
+WIDTH = 1000
 HEIGHT = 1000
 
 class Mouse(object):
@@ -10,13 +10,26 @@ class Mouse(object):
         self.on = False
 
 class ParticleSystem(object):
+    # self.attached == True if the system is the newest 
+    # self.position is either the mouse position if self.attached is True, or updated with velocity on each frame if not
+    # Array of all particles in system
+    # growthRate of particles
+    # distance of center of mass from the center of mass of all systems
+    # gravity amplifier
+    # velocity of system, non-zero only if detached
+     # mass of system is mass of all particles in system/3
+    # gravity type, False for inverted gravity
+    # drawtype choose from dot, line, tracer
     
     # Creates a new particle system wherever the mouse when clicking 
-    def __init__(self, x, y, count = 0):
+    def __init__(self, x, y, count = 1):
+        self.attached = True
         self.position = PVector(x,y)
         self.particles = []
         self.growthRate = .001
+        self.distance = 0
         self.gravity=1
+        self.velocity = PVector(0,0)
         self.mass=0
         self.gType = True
         self.drawType = "dot"
@@ -28,13 +41,19 @@ class ParticleSystem(object):
     def move(self, x, y):
         if self.drawType == "lastfew":
             background(color(255))
+        if self.attached == True:
+            self.position.x = x
+            self.position.y = y
+        else:
+            self.getVelocity()
+            self.position.x += self.velocity.x
+            self.position.y += self.velocity.y
+            
         self.mass=0
         if len(self.particles)!= 0:
             centroid_x = 0
             centroid_y = 0
             
-            self.position.x = x
-            self.position.y = y
             for particle in self.particles:
                 particle.move()
                 particle.display()
@@ -72,10 +91,47 @@ class ParticleSystem(object):
             
     #         ellipse(centroid_x, centroid_y, self.mass, self.mass)
             
-            
+         
     # Add particle to system
     def addParticle(self):
         self.particles.append(Particle(self))
+        
+    def getDistance(self):
+        overall = PVector(0,0)
+        for system in systems:
+            if system != self:
+                overall.x += system.position.x
+                overall.y += system.position.y
+                
+        overall.x = overall.x/len(systems)
+        overall.y = overall.y/len(systems)
+        
+        if overall.x == 0:
+            overall.x = WIDTH/2
+        if overall.y == 0:
+            overall.x = HEIGHT/2
+            
+        print(overall)
+        # Gets and sets the distance from the center of mass of the system to the center of mass of all systems
+        self.distance = sqrt((self.position.x - overall.x)**2 + (self.position.y - overall.y)**2)
+        
+        # Change of coords
+        # d.x being positive means the particle is to the left of the system
+        # d.y being positive means the particle is above the system
+        
+        self.d = PVector(overall.x - self.position.x, overall.y - self.position.y)
+        # print("System Pos: " + str(self.system.position.x), str(self.system.position.y), "Part Pos: "+str(self.position.x),  str(self.position.y))
+        
+        # angle in radians between center and particle 
+        self.angle = atan2(self.d.y, self.d.x)
+    
+    def getVelocity(self):
+        self.getDistance()
+        
+        self.velocity.x += cos(self.angle)*self.distance
+        self.velocity.y += sin(self.angle)*self.distance
+        
+        print(self.velocity)
         
     # Pop oldest particle 
     def popParticle(self):
@@ -137,10 +193,11 @@ class Particle(object):
         self.angle = atan2(self.d.y, self.d.x)
         
     def updatePosition(self):
+        self.previousPosition = PVector(self.position.x, self.position.y)
         self.position.x += self.velocity.x
         self.position.y += self.velocity.y
         
-        self.lastfew.append(PVector(self.position.x, self.position.y))
+        self.lastfew.append(self.previousPosition)
         if len(self.lastfew)>10:
             self.lastfew.pop(0)
     
@@ -187,14 +244,14 @@ def draw():
     
 def keyPressed():
     if keyCode == UP:
-        systems[0].addParticle()
+        systems[len(systems)-1].addParticle()
     if keyCode == DOWN:
-        systems[0].popParticle()
+        systems[len(systems)-1].popParticle()
         
     if keyCode == LEFT:
-        systems[0].growthRate-=.001
+        systems[len(systems)-1].growthRate-=.001
     if keyCode == RIGHT:
-        systems[0].growthRate+=.001
+        systems[len(systems)-1].growthRate+=.001
      
     # press c
     # clear the screen
@@ -204,23 +261,28 @@ def keyPressed():
         
     # switch to dot draw type
     if key == "d":
-        systems[0].drawType = "dot"
+        systems[len(systems)-1].drawType = "dot"
         
     # switch to line drawings
     if key == "l":
-        systems[0].drawType = "line"
+        systems[len(systems)-1].drawType = "line"
         
         
     if key == "t":
-        systems[0].trace = not systems[0].trace
+        systems[len(systems)-1].trace = not systems[len(systems)-1].trace
         
         
     if key == "g":
-        systems[0].gType = not systems[0].gType
+        systems[len(systems)-1].gType = not systems[len(systems)-1].gType
         
         
     if key == "f":
-        systems[0].drawType = "lastfew"
+        systems[len(systems)-1].drawType = "lastfew"
+        
+    if key == "b":
+        systems[len(systems)-1].attached = False
+        systems.append(ParticleSystem(mouseX,mouseY))
+        
         
     # Press s to save window as shep#.tiff
     if key == "s":
