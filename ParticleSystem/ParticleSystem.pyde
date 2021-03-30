@@ -12,22 +12,23 @@ class Mouse(object):
 class ParticleSystem(object):
     
     # Creates a new particle system wherever the mouse when clicking 
-    def __init__(self, x, y, count = 5):
+    def __init__(self, x, y, count = 0):
         self.position = PVector(x,y)
-        self.velocity = PVector(0,0)
         self.particles = []
         self.growthRate = .001
-        self.gravity=0
-        self.mass=500
+        self.gravity=1
+        self.mass=0
         self.gType = True
         self.drawType = "dot"
         self.trace = False
         for i in range(count):
             self.addParticle()
             
-    # Calculate centroid + mass while moving and displaying all particles in system
+    
     def move(self, x, y):
-        self.mass=500
+        if self.drawType == "lastfew":
+            background(color(255))
+        self.mass=0
         if len(self.particles)!= 0:
             centroid_x = 0
             centroid_y = 0
@@ -38,12 +39,38 @@ class ParticleSystem(object):
                 particle.move()
                 particle.display()
                 centroid_x+=particle.position.x
-                centroid_y=particle.position.y
-                self.mass+=particle.mass
+                centroid_y+=particle.position.y
+                self.mass+=particle.mass/3
             self.gravity=self.mass/len(self.particles)
             
             centroid_x = centroid_x/len(self.particles)
             centroid_y = centroid_y/len(self.particles)
+            
+            ellipse(centroid_x, centroid_y, self.mass, self.mass)
+    
+    # Calculate centroid + mass while moving and displaying all particles in system
+    # def move(self, x, y):
+    #     if self.drawType == "lastfew":
+    #         background(color(255))
+    #     self.mass=0
+    #     if len(self.particles)!= 0:
+    #         centroid_x = 0
+    #         centroid_y = 0
+            
+    #         self.position.x = x
+    #         self.position.y = y
+    #         for particle in self.particles:
+    #             particle.move()
+    #             particle.display()
+    #             centroid_x+=particle.position.x
+    #             centroid_y+=particle.position.y
+    #             self.mass+=particle.mass/3
+    #         self.gravity=self.mass/len(self.particles)
+            
+    #         centroid_x = centroid_x/len(self.particles)
+    #         centroid_y = centroid_y/len(self.particles)
+            
+    #         ellipse(centroid_x, centroid_y, self.mass, self.mass)
             
             
     # Add particle to system
@@ -64,6 +91,7 @@ class Particle(object):
     
     def __init__(self, system):
         self.mass = 0
+        self.age = 0
         self.system = system
         self.distance = random(100)
         self.angle = radians(random(0,360))
@@ -78,15 +106,19 @@ class Particle(object):
         if self.system.drawType=="line":
             line(self.previousPosition.x, self.previousPosition.y, self.position.x, self.position.y)
         if self.system.drawType=="lastfew": 
-            for prevpos in self.lastfew:
-                ellipse(prevpos.x, prevpos.y, 2, 2)
+            self.trace()
                 
                 
     def move(self):
         
         self.updateVelocity()
         self.updatePosition()
-        self.mass += self.system.growthRate
+        if self.mass >= self.system.growthRate:
+            self.mass += self.system.growthRate
+        else: 
+            self.mass = self.system.growthRate
+            
+        self.age+=1
             
             
     def getDistance(self):
@@ -105,13 +137,11 @@ class Particle(object):
         self.angle = atan2(self.d.y, self.d.x)
         
     def updatePosition(self):
-        
-        self.previousPosition = PVector(self.position.x, self.position.x)
         self.position.x += self.velocity.x
         self.position.y += self.velocity.y
         
-        self.lastfew.append(self.position)
-        if len(self.lastfew)>14:
+        self.lastfew.append(PVector(self.position.x, self.position.y))
+        if len(self.lastfew)>10:
             self.lastfew.pop(0)
     
     def updateVelocity(self):
@@ -119,11 +149,11 @@ class Particle(object):
         self.getDistance()
         # Add xy-components of gravity vector to velocity
         if self.system.gType:
-            self.velocity.x += cos(self.angle)*self.system.gravity/self.distance**2
-            self.velocity.y += sin(self.angle)*self.system.gravity/self.distance**2
+            self.velocity.x += cos(self.angle)*self.system.gravity*self.system.mass/self.distance**2
+            self.velocity.y += sin(self.angle)*self.system.gravity*self.system.mass/self.distance**2
         else:
-            self.velocity.x += cos(self.angle)*self.system.gravity*self.distance**2/10000
-            self.velocity.y += sin(self.angle)*self.system.gravity*self.distance**2/10000
+            self.velocity.x += cos(self.angle)*self.system.gravity*self.distance**2/100000
+            self.velocity.y += sin(self.angle)*self.system.gravity*self.distance**2/100000
         # Bounce off of the cursor if particle gets close 
         #if self.distance < 10:self.bounce()
         
@@ -132,7 +162,8 @@ class Particle(object):
         self.velocity.y = -self.velocity.y
     
     def trace(self):
-        point(self.position.x, self.position.y)
+        for i in self.lastfew:
+            ellipse(i.x, i.y, 1, 1)
         
 systems = []
 
@@ -145,7 +176,6 @@ def setup():
 
 def draw():
     mouse = Mouse(mouseX, mouseY)
-    print("hello")
     if mousePressed:
         mouse.on = True
     else:
@@ -161,22 +191,22 @@ def keyPressed():
     if keyCode == DOWN:
         systems[0].popParticle()
         
-    # If left/right & g increase/decrease gravity
-    # If left/right w/o gincrease/decrease particleGrowthRate
     if keyCode == LEFT:
         systems[0].growthRate-=.001
     if keyCode == RIGHT:
         systems[0].growthRate+=.001
      
-        
+    # press c
+    # clear the screen
     if key == "c":
         background(color(255))
         
         
+    # switch to dot draw type
     if key == "d":
         systems[0].drawType = "dot"
         
-        
+    # switch to line drawings
     if key == "l":
         systems[0].drawType = "line"
         
